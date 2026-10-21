@@ -7,7 +7,7 @@ SecureVote is a full-stack prototype of a **blockchain-based weighted voting pla
 - Course: _Introduction to Finance_, Astana IT University, 2026–2027
 - Everything is fictional: organizations, users, financial figures and voting scenarios.
 - **Demo video:** `<ADD UNIVERSITY ONEDRIVE LINK HERE>`
-- **Repository:** `<ADD REPOSITORY LINK HERE>`
+- **Repository:** https://github.com/westnur/securevote1
 
 > **Safety constraints.** Local Hardhat network (chain id 31337) only — the backend and frontend refuse other chains. No real cryptocurrency, tokens, funds, customers or personal data. Hardhat's test accounts are **public** keys; never use them on a real network. Not legally compliant, not audited, not suitable for real elections. AI-assisted implementation — see [`docs/AI_DISCLOSURE.md`](docs/AI_DISCLOSURE.md).
 
@@ -48,7 +48,7 @@ No internet access is needed at runtime. Compilation uses the pinned `solc` npm 
 ## 3. Quick start (one command)
 
 ```bash
-git clone <repository-url> securevote && cd securevote
+git clone https://github.com/westnur/securevote1.git securevote && cd securevote
 npm install
 cp .env.example .env          # then edit the placeholder passwords
 npm run db:up                 # PostgreSQL in Docker (skip if you run PostgreSQL locally)
