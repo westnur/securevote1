@@ -1,0 +1,212 @@
+// SecureVote — off-chain data model (PostgreSQL via Prisma).
+//
+// The smart contract is the AUTHORITATIVE source for: session lifecycle state, voter
+// registration on-chain, vote acceptance and vote totals. This database deliberately
+// stores NO vote totals and NO per-voter choices. It stores identities (synthetic),
+// organizations, election metadata/drafts, the prepared eligibility list, references to
+// blockchain transactions, and an application audit log.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  SHAREHOLDER
+  AUDITOR
+}
+
+enum ElectionStatus {
+  DRAFT // exists only in the database; editable by its organizer
+  PUBLISHED // createSession confirmed on-chain; lifecycle now read from the contract
+}
+
+enum TxKind {
+  CREATE_SESSION
+  REGISTER_VOTERS
+  OPEN_SESSION
+  CAST_VOTE
+  CLOSE_SESSION
+  GRANT_ORGANIZER
+  REVOKE_ORGANIZER
+}
+
+enum TxStatus {
+  PENDING // submitted, no receipt yet — never shown as success
+  CONFIRMED // receipt status = 1 and expected event found
+  FAILED // reverted or did not match expectations
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  displayName   String
+  passwordHash  String
+  /// Lower-case 0x address of the user's LOCAL TEST wallet (Hardhat account). Public data.
+  walletAddress String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships       OrganizationMembership[]
+  sessions          AuthSession[]
+  electionsCreated  Election[]                 @relation("ElectionCreatedBy")
+  eligibilities     VoterEligibility[]
+  auditEvents       AuditEvent[]
+  transactions      TransactionReference[]
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  /// SHA-256 of the random session token. The raw token only lives in the HttpOnly cookie.
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Organization {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  name               String
+  description        String
+  /// Fictional registration number — synthetic data only.
+  registrationNumber String
+  totalShares        Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  memberships OrganizationMembership[]
+  elections   Election[]
+  auditEvents AuditEvent[]
+}
+
+model OrganizationMembership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  roles          Role[]
+  /// Default voting entitlement (number of fictional shares) for shareholders.
+  shareCount     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model Election {
+  id             String         @id @default(cuid())
+  organizationId String
+  createdById    String
+  title          String
+  description    String
+  startTime      DateTime
+  endTime        DateTime
+  /// Minimum participating weight in basis points (0..10000) — mirrored on-chain.
+  quorumBps      Int            @default(0)
+  status         ElectionStatus @default(DRAFT)
+  /// On-chain session id (uint256 as decimal string). Unique per contract.
+  chainSessionId String?
+  contractAddress String?
+  chainId        Int?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User                   @relation("ElectionCreatedBy", fields: [createdById], references: [id])
+  options      ElectionOption[]
+  eligibility  VoterEligibility[]
+  auditEvents  AuditEvent[]
+  transactions TransactionReference[]
+
+  @@unique([contractAddress, chainSessionId])
+  @@index([organizationId, status])
+  @@index([createdById])
+}
+
+model ElectionOption {
+  id         String @id @default(cuid())
+  electionId String
+  index      Int
+  label      String
+
+  election Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, index])
+}
+
+model VoterEligibility {
+  id         String    @id @default(cuid())
+  electionId String
+  userId     String
+  /// Voting weight to be registered on-chain. Must be > 0.
+  weight     Int
+  /// Set once a confirmed VoterRegistered event for this voter was verified.
+  registeredTxHash String?
+  registeredAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  election Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, userId])
+  @@index([userId])
+}
+
+model AuditEvent {
+  id             String   @id @default(cuid())
+  organizationId String?
+  electionId     String?
+  actorUserId    String?
+  /// e.g. AUTH_LOGIN, ELECTION_CREATED, VOTE_RECORDED, ACCESS_DENIED
+  action         String
+  /// Non-sensitive structured details (never passwords, tokens or keys).
+  details        Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  election     Election?     @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  actor        User?         @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([electionId, createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model TransactionReference {
+  id          String   @id @default(cuid())
+  /// A transaction hash can be recorded only once (prevents replaying someone else's tx).
+  txHash      String   @unique
+  kind        TxKind
+  status      TxStatus @default(PENDING)
+  chainId     Int
+  fromAddress String
+  blockNumber Int?
+  error       String?
+  electionId  String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  election Election? @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([electionId, kind])
+  @@index([userId])
+}

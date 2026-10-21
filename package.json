@@ -1,0 +1,15 @@
+{
+  "name": "securevote",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SecureVote — educational blockchain-based corporate voting prototype (Introduction to Finance, AITU). Not a real product.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/contracts",
+    "apps/backend",
+    "apps/frontend"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  }
+}
