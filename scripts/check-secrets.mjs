@@ -19,12 +19,7 @@ const files = execSync("git ls-files --cached --others --exclude-standard", {
 })
   .split("\n")
   .filter(Boolean)
-  .filter(
-    (f) =>
-      fs.existsSync(f) &&
-      !f.endsWith("package-lock.json") &&
-      !f.includes("node_modules/"),
-  );
+  .filter((f) => fs.existsSync(f) && !f.endsWith("package-lock.json") && !f.includes("node_modules/"));
 
 const rules = [
   {
@@ -64,17 +59,13 @@ const sha256 = (s) => createHash("sha256").update(s).digest("hex");
 const findings = [];
 for (const f of files) {
   if (!/\.(png|jpg|ico|zip)$/.test(f)) {
-    for (const token of fs
-      .readFileSync(f, "utf8")
-      .match(/\b[0-9a-fA-F]{64}\b/g) ?? []) {
-      if (KNOWN_TEST_KEY_FINGERPRINTS.has(sha256(token.toLowerCase())))
-        findings.push(`${f}: Hardhat test private key`);
+    for (const token of fs.readFileSync(f, "utf8").match(/\b[0-9a-fA-F]{64}\b/g) ?? []) {
+      if (KNOWN_TEST_KEY_FINGERPRINTS.has(sha256(token.toLowerCase()))) findings.push(`${f}: Hardhat test private key`);
     }
   }
   for (const r of rules) {
     if (r.file) {
-      if (r.file.test(f) && !(r.exclude && r.exclude.test(f)))
-        findings.push(`${f}: ${r.name}`);
+      if (r.file.test(f) && !(r.exclude && r.exclude.test(f))) findings.push(`${f}: ${r.name}`);
       continue;
     }
     if (f === "scripts/check-secrets.mjs") continue; // contains the patterns themselves
@@ -86,9 +77,7 @@ for (const f of files) {
 }
 
 if (findings.length) {
-  console.error(
-    "Potential secrets found:\n" + findings.map((x) => "  - " + x).join("\n"),
-  );
+  console.error("Potential secrets found:\n" + findings.map((x) => "  - " + x).join("\n"));
   process.exit(1);
 }
 console.log(`Secret scan passed (${files.length} files checked).`);
