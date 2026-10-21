@@ -56,11 +56,14 @@ export default async function setup(project: TestProject) {
   if (!fs.existsSync(artifact)) execSync("npx hardhat compile", { cwd: contractsDir, stdio: "pipe" });
 
   const rpcUrl = `http://127.0.0.1:${TEST_RPC_PORT}`;
-  node = spawn("npx", ["hardhat", "node", "--hostname", "127.0.0.1", "--port", String(TEST_RPC_PORT)], {
+  const isWindows = process.platform === "win32";
+  const nodeArgs = ["hardhat", "node", "--hostname", "127.0.0.1", "--port", String(TEST_RPC_PORT)];
+  // npx is a .cmd script on Windows and must run through a shell as one command string.
+  node = spawn(isWindows ? `npx ${nodeArgs.join(" ")}` : "npx", isWindows ? [] : nodeArgs, {
     cwd: contractsDir,
     stdio: "ignore",
-    detached: process.platform !== "win32",
-    shell: process.platform === "win32", // npx is a .cmd script on Windows
+    detached: !isWindows,
+    shell: isWindows,
   });
   await waitForRpc(rpcUrl);
 

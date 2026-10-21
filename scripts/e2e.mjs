@@ -16,9 +16,12 @@ if (!ok) {
   console.error("The local stack is not running or not healthy. Start it with `npm run dev` and retry.");
   process.exit(1);
 }
-const r = spawnSync("npx", ["playwright", "test", ...process.argv.slice(2)], {
+const isWindows = process.platform === "win32";
+const args = ["playwright", "test", ...process.argv.slice(2)];
+// npx is a .cmd script on Windows and must run through a shell as one command string.
+const r = spawnSync(isWindows ? `npx ${args.join(" ")}` : "npx", isWindows ? [] : args, {
   cwd: path.join(root, "apps/frontend"),
   stdio: "inherit",
-  shell: process.platform === "win32", // npx is a .cmd script on Windows
+  shell: isWindows,
 });
 process.exit(r.status ?? 1);

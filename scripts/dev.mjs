@@ -28,8 +28,12 @@ const fresh = process.argv.includes("--fresh");
 const skipScenario = process.argv.includes("--no-scenario");
 const children = [];
 const isWindows = process.platform === "win32";
-// On Windows, npm is a .cmd script; Node.js only runs those through a shell.
+// On Windows, npm is a .cmd script that Node.js only runs through a shell. With a
+// shell the command is passed as ONE string (our arguments are fixed, not user input).
 const npm = "npm";
+const viaShell = (args) => (isWindows ? [`${npm} ${args.join(" ")}`, []] : [npm, args]);
+// Child processes: never stop for Hardhat's interactive telemetry question.
+const childEnv = { ...process.env, HARDHAT_DISABLE_TELEMETRY_PROMPT: "true" };
 
 const log = (msg) => console.log(`\x1b[36m[securevote]\x1b[0m ${msg}`);
 const fail = (msg) => {
@@ -80,13 +84,19 @@ async function waitFor(check, label, timeoutMs = 60_000) {
 
 function run(args, label) {
   log(label);
-  const r = spawnSync(npm, args, { cwd: root, stdio: "inherit", shell: isWindows });
+  const r = spawnSync(...viaShell(args), { cwd: root, stdio: "inherit", shell: isWindows, env: childEnv });
   if (r.status !== 0) fail(`Step failed: ${label}`);
 }
 
 function startProcess(args, name, logFile) {
   const out = logFile ? fs.openSync(logFile, "a") : "inherit";
-  const child = spawn(npm, args, { cwd: root, stdio: ["ignore", out, out], detached: !isWindows, shell: isWindows });
+  const child = spawn(...viaShell(args), {
+    cwd: root,
+    stdio: ["ignore", out, out],
+    detached: !isWindows,
+    shell: isWindows,
+    env: childEnv,
+  });
   children.push({ child, name });
   child.on("exit", (code) => {
     if (!shuttingDown) log(`${name} exited with code ${code}`);
@@ -162,6 +172,9 @@ async function main() {
   }
 
   // 4. Database
+  // Generate the Prisma client explicitly: in npm workspaces @prisma/client's own install
+  // hook cannot find apps/backend/prisma/schema.prisma.
+  run(["run", "db:generate", "-w", "@securevote/backend"], "Generating Prisma client");
   run(["run", "db:migrate"], "Applying database migrations");
   if (redeploy) {
     // The old chain state is gone, so stale election references are replaced with fresh
