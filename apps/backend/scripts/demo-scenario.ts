@@ -17,8 +17,14 @@ const RPC = process.env.RPC_URL ?? "http://127.0.0.1:8545";
 const PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "";
 const email = (u: string) => `${u}@demo.securevote.test`;
 
-interface Me { user: { walletAddress: string }; memberships: { organizationId: string }[] }
-interface Voters { candidates: { userId: string; displayName: string; shareCount: number; walletAddress: string }[]; voters: { walletAddress: string; weight: number }[] }
+interface Me {
+  user: { walletAddress: string };
+  memberships: { organizationId: string }[];
+}
+interface Voters {
+  candidates: { userId: string; displayName: string; shareCount: number; walletAddress: string }[];
+  voters: { walletAddress: string; weight: number }[];
+}
 
 async function as(user: string) {
   const api = new ApiClient(API);
@@ -54,7 +60,15 @@ async function runElection(opts: {
   const { election } = await org.api.expectOk<{ election: { id: string; startTime: string; endTime: string } }>(
     "POST",
     "/api/elections",
-    { organizationId: orgId, title: opts.title, description: opts.description, options: opts.options, startTime: start, endTime: end, quorumBps: opts.quorumBps },
+    {
+      organizationId: orgId,
+      title: opts.title,
+      description: opts.description,
+      options: opts.options,
+      startTime: start,
+      endTime: end,
+      quorumBps: opts.quorumBps,
+    },
   );
   const { candidates } = await org.api.expectOk<Voters>("GET", `/api/elections/${election.id}/voters`);
   const chosen = candidates.filter((c) => opts.voters.includes(c.displayName.split(" ")[0]!.toLowerCase()));
@@ -68,7 +82,11 @@ async function runElection(opts: {
   const pub = await org.api.expectOk<{ sessionId: string }>("POST", `/api/elections/${election.id}/publish`, { txHash: hash });
 
   hash = await send(
-    organizerContract.registerVoters(pub.sessionId, chosen.map((c) => getAddress(c.walletAddress)), chosen.map((c) => c.shareCount)),
+    organizerContract.registerVoters(
+      pub.sessionId,
+      chosen.map((c) => getAddress(c.walletAddress)),
+      chosen.map((c) => c.shareCount),
+    ),
   );
   await org.api.expectOk("POST", `/api/elections/${election.id}/voters/registration`, { txHash: hash });
   hash = await send(organizerContract.openSession(pub.sessionId));
@@ -89,7 +107,9 @@ async function runElection(opts: {
 
 async function main() {
   if (!PASSWORD) throw new Error("SEED_DEMO_PASSWORD is not set");
-  const health = await fetch(`${API}/api/health`).then((r) => r.json()).catch(() => null);
+  const health = await fetch(`${API}/api/health`)
+    .then((r) => r.json())
+    .catch(() => null);
   if (!health?.blockchain?.contractDeployed) {
     throw new Error(`Backend at ${API} not ready or contract not deployed: ${JSON.stringify(health)}`);
   }
@@ -104,7 +124,13 @@ async function main() {
     hours: 48,
     quorumBps: 5000,
     voters: ["alikhan", "madina", "timur", "zarina", "saule"],
-    votes: [["alikhan", 1], ["madina", 0], ["timur", 0], ["zarina", 0], ["saule", 1]],
+    votes: [
+      ["alikhan", 1],
+      ["madina", 0],
+      ["timur", 0],
+      ["zarina", 0],
+      ["saule", 1],
+    ],
     close: true,
   });
   await runElection({
@@ -115,7 +141,10 @@ async function main() {
     hours: 72,
     quorumBps: 6000,
     voters: ["alikhan", "madina", "timur", "zarina", "saule"],
-    votes: [["timur", 0], ["zarina", 1]],
+    votes: [
+      ["timur", 0],
+      ["zarina", 1],
+    ],
     close: false,
   });
   console.log("Done. The draft 'Approval of the FY2026 dividend policy' is left for the live demo.");

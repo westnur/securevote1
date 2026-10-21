@@ -27,7 +27,12 @@ export async function setupTestApp(limits: Partial<AppDeps["limits"]> = {}) {
   const prisma = createPrisma(env.DATABASE_URL);
   const seeded = await seedDatabase(prisma, { password: TEST_PASSWORD, bcryptRounds: 4 });
   const chain = new EthersChainGateway(env.RPC_URL, env.CHAIN_ID, { contractAddress: env.CONTRACT_ADDRESS });
-  const app = createApp({ prisma, chain, env, limits: { ...DEFAULT_LIMITS, apiPer15Min: 100_000, writesPerMinute: 100_000, loginPer15Min: 1000, ...limits } });
+  const app = createApp({
+    prisma,
+    chain,
+    env,
+    limits: { ...DEFAULT_LIMITS, apiPer15Min: 100_000, writesPerMinute: 100_000, loginPer15Min: 1000, ...limits },
+  });
   return { app, prisma, chain, env, ...seeded };
 }
 
@@ -39,7 +44,10 @@ export const walletOf = (key: UserKey) => getAddress(HARDHAT_ACCOUNTS[DEMO_USERS
 /** A supertest agent (keeps cookies) logged in as the given demo user. */
 export async function loginAs(app: Parameters<typeof request.agent>[0], key: UserKey) {
   const agent = request.agent(app);
-  const res = await agent.post("/api/auth/login").set(CSRF).send({ email: emailOf(key), password: TEST_PASSWORD });
+  const res = await agent
+    .post("/api/auth/login")
+    .set(CSRF)
+    .send({ email: emailOf(key), password: TEST_PASSWORD });
   if (res.status !== 200) throw new Error(`login ${key} failed: ${res.status} ${JSON.stringify(res.body)}`);
   return agent;
 }

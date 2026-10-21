@@ -132,26 +132,51 @@ describe("validation of manipulated client data", () => {
   it("rejects zero/negative weights, duplicates and non-shareholder voters", async () => {
     const agent = await loginAs(ctx.app, "organizer");
     const url = `/api/elections/${dividendId}/voters`;
-    expect((await agent.put(url).set(CSRF).send({ voters: [{ userId: ctx.userIds.alikhan, weight: 0 }] })).status).toBe(400);
-    expect((await agent.put(url).set(CSRF).send({ voters: [{ userId: ctx.userIds.alikhan, weight: -5 }] })).status).toBe(400);
     expect(
       (
         await agent
           .put(url)
           .set(CSRF)
-          .send({ voters: [{ userId: ctx.userIds.alikhan, weight: 1 }, { userId: ctx.userIds.alikhan, weight: 2 }] })
+          .send({ voters: [{ userId: ctx.userIds.alikhan, weight: 0 }] })
       ).status,
     ).toBe(400);
-    const auditorAsVoter = await agent.put(url).set(CSRF).send({ voters: [{ userId: ctx.userIds.auditor, weight: 10 }] });
+    expect(
+      (
+        await agent
+          .put(url)
+          .set(CSRF)
+          .send({ voters: [{ userId: ctx.userIds.alikhan, weight: -5 }] })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await agent
+          .put(url)
+          .set(CSRF)
+          .send({
+            voters: [
+              { userId: ctx.userIds.alikhan, weight: 1 },
+              { userId: ctx.userIds.alikhan, weight: 2 },
+            ],
+          })
+      ).status,
+    ).toBe(400);
+    const auditorAsVoter = await agent
+      .put(url)
+      .set(CSRF)
+      .send({ voters: [{ userId: ctx.userIds.auditor, weight: 10 }] });
     expect(auditorAsVoter.status).toBe(400);
     expect(auditorAsVoter.body.error.code).toBe("INVALID_VOTERS");
-    const otherOrg = await agent.put(url).set(CSRF).send({ voters: [{ userId: ctx.userIds.gulnara, weight: 10 }] });
+    const otherOrg = await agent
+      .put(url)
+      .set(CSRF)
+      .send({ voters: [{ userId: ctx.userIds.gulnara, weight: 10 }] });
     expect(otherOrg.body.error.code).toBe("INVALID_VOTERS");
   });
 
   it("treats SQL-injection-like input as plain data", async () => {
     const agent = await loginAs(ctx.app, "organizer");
-    const res = await agent.get("/api/elections").query({ q: "'; DROP TABLE \"User\"; --" });
+    const res = await agent.get("/api/elections").query({ q: '\'; DROP TABLE "User"; --' });
     expect(res.status).toBe(200);
     expect(res.body.elections).toEqual([]);
     expect(await ctx.prisma.user.count()).toBeGreaterThan(0);
@@ -173,7 +198,10 @@ describe("validation of manipulated client data", () => {
     const agent = await loginAs(ctx.app, "organizer");
     const bad = await agent.post(`/api/elections/${dividendId}/publish`).set(CSRF).send({ txHash: "0x1234" });
     expect(bad.status).toBe(400);
-    const unknown = await agent.post(`/api/elections/${dividendId}/publish`).set(CSRF).send({ txHash: "0x" + "ab".repeat(32) });
+    const unknown = await agent
+      .post(`/api/elections/${dividendId}/publish`)
+      .set(CSRF)
+      .send({ txHash: "0x" + "ab".repeat(32) });
     expect(unknown.status).toBe(400);
     expect(unknown.body.error.code).toBe("TX_NOT_FOUND");
   });

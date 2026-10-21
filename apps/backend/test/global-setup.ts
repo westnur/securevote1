@@ -68,7 +68,10 @@ export default async function setup(project: TestProject) {
   const [admin, organizer] = await provider.listAccounts();
   const contract = await new ContractFactory(abi, bytecode, admin).deploy(admin!.address);
   await contract.waitForDeployment();
-  const c = contract as unknown as { ORGANIZER_ROLE(): Promise<string>; grantRole(r: string, a: string): Promise<{ wait(): Promise<unknown> }> };
+  const c = contract as unknown as {
+    ORGANIZER_ROLE(): Promise<string>;
+    grantRole(r: string, a: string): Promise<{ wait(): Promise<unknown> }>;
+  };
   await (await c.grantRole(await c.ORGANIZER_ROLE(), organizer!.address)).wait();
 
   project.provide("contractAddress", await contract.getAddress());

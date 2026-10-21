@@ -31,34 +31,89 @@ interface DemoUser {
 }
 
 export const DEMO_USERS: DemoUser[] = [
-  { key: "admin", email: `admin@${DOMAIN}`, displayName: "Aruzhan Admin", wallet: 0,
-    memberships: [{ org: "altyn", roles: ["ADMIN"], shares: 0 }, { org: "esil", roles: ["ADMIN"], shares: 0 }] },
-  { key: "organizer", email: `organizer@${DOMAIN}`, displayName: "Daniyar Organizer", wallet: 1,
-    memberships: [{ org: "altyn", roles: ["ORGANIZER"], shares: 0 }] },
-  { key: "alikhan", email: `alikhan@${DOMAIN}`, displayName: "Alikhan Shareholder", wallet: 2,
-    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 4000 }] },
-  { key: "madina", email: `madina@${DOMAIN}`, displayName: "Madina Shareholder", wallet: 3,
-    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 3000 }] },
-  { key: "timur", email: `timur@${DOMAIN}`, displayName: "Timur Shareholder", wallet: 4,
-    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 2000 }] },
-  { key: "zarina", email: `zarina@${DOMAIN}`, displayName: "Zarina Shareholder", wallet: 5,
-    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 1000 }] },
-  { key: "auditor", email: `auditor@${DOMAIN}`, displayName: "Yerlan Auditor", wallet: 6,
-    memberships: [{ org: "altyn", roles: ["AUDITOR"], shares: 0 }, { org: "esil", roles: ["AUDITOR"], shares: 0 }] },
-  { key: "saule", email: `saule@${DOMAIN}`, displayName: "Saule Shareholder", wallet: 7,
-    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 500 }] },
-  { key: "gulnara", email: `gulnara@${DOMAIN}`, displayName: "Gulnara Resident", wallet: 8,
-    memberships: [{ org: "esil", roles: ["SHAREHOLDER"], shares: 85 }] },
-  { key: "nurlan", email: `nurlan@${DOMAIN}`, displayName: "Nurlan HOA Organizer", wallet: 9,
-    memberships: [{ org: "esil", roles: ["ORGANIZER", "SHAREHOLDER"], shares: 120 }] },
+  {
+    key: "admin",
+    email: `admin@${DOMAIN}`,
+    displayName: "Aruzhan Admin",
+    wallet: 0,
+    memberships: [
+      { org: "altyn", roles: ["ADMIN"], shares: 0 },
+      { org: "esil", roles: ["ADMIN"], shares: 0 },
+    ],
+  },
+  {
+    key: "organizer",
+    email: `organizer@${DOMAIN}`,
+    displayName: "Daniyar Organizer",
+    wallet: 1,
+    memberships: [{ org: "altyn", roles: ["ORGANIZER"], shares: 0 }],
+  },
+  {
+    key: "alikhan",
+    email: `alikhan@${DOMAIN}`,
+    displayName: "Alikhan Shareholder",
+    wallet: 2,
+    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 4000 }],
+  },
+  {
+    key: "madina",
+    email: `madina@${DOMAIN}`,
+    displayName: "Madina Shareholder",
+    wallet: 3,
+    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 3000 }],
+  },
+  {
+    key: "timur",
+    email: `timur@${DOMAIN}`,
+    displayName: "Timur Shareholder",
+    wallet: 4,
+    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 2000 }],
+  },
+  {
+    key: "zarina",
+    email: `zarina@${DOMAIN}`,
+    displayName: "Zarina Shareholder",
+    wallet: 5,
+    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 1000 }],
+  },
+  {
+    key: "auditor",
+    email: `auditor@${DOMAIN}`,
+    displayName: "Yerlan Auditor",
+    wallet: 6,
+    memberships: [
+      { org: "altyn", roles: ["AUDITOR"], shares: 0 },
+      { org: "esil", roles: ["AUDITOR"], shares: 0 },
+    ],
+  },
+  {
+    key: "saule",
+    email: `saule@${DOMAIN}`,
+    displayName: "Saule Shareholder",
+    wallet: 7,
+    memberships: [{ org: "altyn", roles: ["SHAREHOLDER"], shares: 500 }],
+  },
+  {
+    key: "gulnara",
+    email: `gulnara@${DOMAIN}`,
+    displayName: "Gulnara Resident",
+    wallet: 8,
+    memberships: [{ org: "esil", roles: ["SHAREHOLDER"], shares: 85 }],
+  },
+  {
+    key: "nurlan",
+    email: `nurlan@${DOMAIN}`,
+    displayName: "Nurlan HOA Organizer",
+    wallet: 9,
+    memberships: [{ org: "esil", roles: ["ORGANIZER", "SHAREHOLDER"], shares: 120 }],
+  },
 ];
 
 const ORGS = {
   altyn: {
     slug: "altyn-demo-holdings",
     name: "Altyn Demo Holdings JSC",
-    description:
-      "Fictional joint-stock company used to demonstrate weighted shareholder voting. Not a real company.",
+    description: "Fictional joint-stock company used to demonstrate weighted shareholder voting. Not a real company.",
     registrationNumber: "DEMO-JSC-0001",
     totalShares: 10500,
   },
@@ -75,6 +130,14 @@ const ORGS = {
 const HOUR = 3600 * 1000;
 
 export async function seedDatabase(prisma: PrismaClient, opts: { password: string; bcryptRounds?: number }) {
+  // Safety guard: the seed replaces data, so it refuses to run on a database that
+  // contains any account outside the synthetic demo domain.
+  const foreign = await prisma.user.count({ where: { NOT: { email: { endsWith: `@${DOMAIN}` } } } });
+  if (foreign > 0) {
+    throw new Error(
+      `Refusing to seed: the database contains ${foreign} non-demo account(s). The seed only replaces synthetic demo data.`,
+    );
+  }
   // Clear in dependency order (synthetic data only).
   await prisma.$transaction([
     prisma.auditEvent.deleteMany(),

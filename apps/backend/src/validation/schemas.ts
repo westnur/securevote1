@@ -15,13 +15,21 @@ export const LIMITS = {
 
 const byteLength = (s: string) => Buffer.byteLength(s, "utf8");
 // Reject ASCII control characters (except newline/tab in descriptions).
+// eslint-disable-next-line no-control-regex -- matching control characters is the purpose
 const noControlChars = (s: string) => !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(s);
 
-export const idParam = z.string().min(1).max(64).regex(/^[a-z0-9]+$/i, "Invalid id");
+export const idParam = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z0-9]+$/i, "Invalid id");
 export const txHashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Invalid transaction hash");
 
 export const loginSchema = z.object({
-  email: z.email().max(254).transform((v) => v.toLowerCase()),
+  email: z
+    .email()
+    .max(254)
+    .transform((v) => v.toLowerCase()),
   password: z.string().min(1).max(200),
 });
 

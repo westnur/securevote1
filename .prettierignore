@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+package-lock.json
+packages/contracts/artifacts
+packages/contracts/cache
+packages/contracts/typechain-types
+packages/contracts/abi
+packages/contracts/deployments
+apps/backend/prisma/migrations
+apps/frontend/test-results
+.run

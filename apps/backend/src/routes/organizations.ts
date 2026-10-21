@@ -118,9 +118,7 @@ export function organizationsRouter({ prisma, chain }: AppDeps): Router {
     }
 
     const roles =
-      action === "grant"
-        ? [...new Set([...member.roles, "ORGANIZER" as const])]
-        : member.roles.filter((r) => r !== "ORGANIZER");
+      action === "grant" ? [...new Set([...member.roles, "ORGANIZER" as const])] : member.roles.filter((r) => r !== "ORGANIZER");
     await prisma.organizationMembership.update({ where: { id: member.id }, data: { roles } });
     await recordTransaction(prisma, { ...base, status: "CONFIRMED", blockNumber: check.blockNumber });
     await audit(prisma, {

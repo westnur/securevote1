@@ -11,5 +11,47 @@
   ],
   "engines": {
     "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:fresh": "node scripts/dev.mjs --fresh",
+    "dev:backend": "npm run dev -w @securevote/backend",
+    "dev:frontend": "npm run dev -w @securevote/frontend",
+    "build": "npm run compile -w @securevote/contracts && npm run build -w @securevote/backend && npm run build -w @securevote/frontend",
+    "start:backend": "npm run start -w @securevote/backend",
+    "preview:frontend": "npm run preview -w @securevote/frontend",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "eslint . && npm run lint:sol",
+    "lint:sol": "solhint 'packages/contracts/contracts/**/*.sol'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test:contracts && npm run test:backend && npm run test:frontend",
+    "test:contracts": "npm run test -w @securevote/contracts",
+    "test:backend": "npm run test -w @securevote/backend",
+    "test:frontend": "npm run test -w @securevote/frontend",
+    "test:e2e": "node scripts/e2e.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:deploy -w @securevote/backend",
+    "db:migrate:dev": "npm run db:migrate -w @securevote/backend",
+    "db:seed": "npm run db:seed -w @securevote/backend",
+    "db:reset": "npm run db:reset -w @securevote/backend",
+    "chain:node": "npm run node -w @securevote/contracts",
+    "chain:compile": "npm run compile -w @securevote/contracts",
+    "chain:deploy": "npm run compile -w @securevote/contracts && npm run deploy:local -w @securevote/contracts",
+    "demo:scenario": "npm run demo:scenario -w @securevote/backend",
+    "finance:model": "node docs/finance/model.mjs",
+    "security:audit-deps": "npm audit --omit=dev",
+    "security:secrets": "node scripts/check-secrets.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "solhint": "^6.2.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.0"
   }
 }

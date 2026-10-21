@@ -104,9 +104,7 @@ describe("primary voting workflow", () => {
   });
 
   it("3c. organizer publishes the election on-chain with their own wallet", async () => {
-    const hash = await sendTx(
-      organizerC.createSession(TITLE, OPTIONS, sec(election.startTime), sec(election.endTime), 5000),
-    );
+    const hash = await sendTx(organizerC.createSession(TITLE, OPTIONS, sec(election.startTime), sec(election.endTime), 5000));
     const res = await organizer.post(`/api/elections/${electionId}/publish`).set(CSRF).send({ txHash: hash });
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("CONFIRMED");
@@ -156,7 +154,12 @@ describe("primary voting workflow", () => {
 
   it("6-8. eligible shareholders check eligibility and cast weighted votes", async () => {
     const elig = await alikhan.get(`/api/elections/${electionId}/eligibility`);
-    expect(elig.body).toMatchObject({ status: "ACTIVE", canVote: true, weight: 4000, onChain: { registered: true, weight: "4000" } });
+    expect(elig.body).toMatchObject({
+      status: "ACTIVE",
+      canVote: true,
+      weight: 4000,
+      onChain: { registered: true, weight: "4000" },
+    });
 
     const h1 = await sendTx(alikhanC.castVote(sessionId, 1)); // Reject (4000)
     const r1 = await alikhan.post(`/api/elections/${electionId}/votes`).set(CSRF).send({ txHash: h1 });
@@ -193,9 +196,14 @@ describe("primary voting workflow", () => {
   });
 
   it("rejects closing by unauthorized users (API and contract)", async () => {
-    expect((await auditor.post(`/api/elections/${electionId}/close`).set(CSRF).send({ txHash: "0x" + "3".repeat(64) })).status).toBe(
-      403,
-    );
+    expect(
+      (
+        await auditor
+          .post(`/api/elections/${electionId}/close`)
+          .set(CSRF)
+          .send({ txHash: "0x" + "3".repeat(64) })
+      ).status,
+    ).toBe(403);
     await expectRevert(auditorC.closeSession(sessionId), "NotSessionOrganizer");
   });
 

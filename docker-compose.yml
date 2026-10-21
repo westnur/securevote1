@@ -1,0 +1,24 @@
+# Local development services for SecureVote (educational prototype).
+# Usage: npm run db:up   (reads POSTGRES_* from .env)
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: securevote-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-securevote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-securevote}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432" # bound to localhost only
+    volumes:
+      - securevote-pgdata:/var/lib/postgresql/data
+      - ./scripts/db/init-test-db.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-securevote} -d ${POSTGRES_DB:-securevote}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  securevote-pgdata:

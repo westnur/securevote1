@@ -12,7 +12,6 @@ const SOLC_VERSION = "0.8.28";
  */
 subtask(TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD, async (args: { solcVersion: string }, _hre, runSuper) => {
   if (args.solcVersion !== SOLC_VERSION) return runSuper();
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const solc = require("solc");
   const longVersion = String(solc.version()).replace(/\.Emscripten\.clang$/, "");
   return {

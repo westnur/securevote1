@@ -59,7 +59,10 @@ describe("recountFromEvents", () => {
 
   it("flags duplicate voters if the event log ever contained them", () => {
     const r = recountFromEvents(
-      [ev("VoteCast", { voter: "0xA", optionIndex: "0", weight: "1" }), ev("VoteCast", { voter: "0xa", optionIndex: "1", weight: "1" })],
+      [
+        ev("VoteCast", { voter: "0xA", optionIndex: "0", weight: "1" }),
+        ev("VoteCast", { voter: "0xa", optionIndex: "1", weight: "1" }),
+      ],
       2,
     );
     expect(r.duplicateVoters).toEqual(["0xa"]);

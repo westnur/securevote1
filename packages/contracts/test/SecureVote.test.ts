@@ -32,9 +32,7 @@ async function createdSessionFixture() {
 async function openSessionFixture() {
   const base = await createdSessionFixture();
   const { contract, organizer, alice, bob, carol, sessionId } = base;
-  await contract
-    .connect(organizer)
-    .registerVoters(sessionId, [alice.address, bob.address, carol.address], [600, 300, 100]);
+  await contract.connect(organizer).registerVoters(sessionId, [alice.address, bob.address, carol.address], [600, 300, 100]);
   await contract.connect(organizer).openSession(sessionId);
   return base;
 }
@@ -198,7 +196,11 @@ describe("SecureVote", function () {
       const n = Number(await contract.MAX_REGISTRATION_BATCH()) + 1;
       const voters = Array.from({ length: n }, () => ethers.Wallet.createRandom().address);
       await expect(
-        contract.connect(organizer).registerVoters(sessionId, voters, voters.map(() => 1)),
+        contract.connect(organizer).registerVoters(
+          sessionId,
+          voters,
+          voters.map(() => 1),
+        ),
       ).to.be.revertedWithCustomError(contract, "BatchTooLarge");
     });
 

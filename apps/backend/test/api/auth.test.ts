@@ -30,7 +30,10 @@ describe("authentication", () => {
       .post("/api/auth/login")
       .set(CSRF)
       .send({ email: "organizer@demo.securevote.test", password: "nope" });
-    const unknown = await request(ctx.app).post("/api/auth/login").set(CSRF).send({ email: "ghost@demo.securevote.test", password: "x" });
+    const unknown = await request(ctx.app)
+      .post("/api/auth/login")
+      .set(CSRF)
+      .send({ email: "ghost@demo.securevote.test", password: "x" });
     expect(wrong.status).toBe(401);
     expect(unknown.status).toBe(401);
     expect(wrong.body.error.message).toBe(unknown.body.error.message);
@@ -51,7 +54,9 @@ describe("authentication", () => {
 
   it("rejects requests with a forged or missing session cookie", async () => {
     expect((await request(ctx.app).get("/api/elections")).status).toBe(401);
-    const forged = await request(ctx.app).get("/api/elections").set("Cookie", "sv_session=" + "A".repeat(43));
+    const forged = await request(ctx.app)
+      .get("/api/elections")
+      .set("Cookie", "sv_session=" + "A".repeat(43));
     expect(forged.status).toBe(401);
   });
 
@@ -93,10 +98,17 @@ describe("CSRF and transport protections", () => {
   });
 
   it("returns safe JSON errors for malformed and oversized bodies", async () => {
-    const bad = await request(ctx.app).post("/api/auth/login").set(CSRF).set("Content-Type", "application/json").send("{bad json");
+    const bad = await request(ctx.app)
+      .post("/api/auth/login")
+      .set(CSRF)
+      .set("Content-Type", "application/json")
+      .send("{bad json");
     expect(bad.status).toBe(400);
     expect(bad.body.error.code).toBe("INVALID_JSON");
-    const big = await request(ctx.app).post("/api/auth/login").set(CSRF).send({ email: "a@b.test", password: "x".repeat(60_000) });
+    const big = await request(ctx.app)
+      .post("/api/auth/login")
+      .set(CSRF)
+      .send({ email: "a@b.test", password: "x".repeat(60_000) });
     expect(big.status).toBe(413);
     expect(JSON.stringify(bad.body)).not.toMatch(/stack|node_modules/);
   });
@@ -119,7 +131,11 @@ describe("health", () => {
   it("reports database and blockchain status without secrets", async () => {
     const res = await request(ctx.app).get("/api/health");
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ status: "ok", database: "ok", blockchain: { reachable: true, chainId: 31337, contractDeployed: true } });
+    expect(res.body).toMatchObject({
+      status: "ok",
+      database: "ok",
+      blockchain: { reachable: true, chainId: 31337, contractDeployed: true },
+    });
     expect(JSON.stringify(res.body)).not.toMatch(/postgres|password/i);
   });
 });

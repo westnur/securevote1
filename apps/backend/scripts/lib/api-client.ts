@@ -15,7 +15,11 @@ export class ApiClient {
     if (this.cookie) headers.Cookie = this.cookie;
     if (body !== undefined) headers["Content-Type"] = "application/json";
     if (method !== "GET") headers["X-SecureVote-CSRF"] = "1";
-    const res = await fetch(this.baseUrl + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const res = await fetch(this.baseUrl + path, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
     const setCookie = res.headers.getSetCookie?.() ?? [];
     for (const c of setCookie) if (c.startsWith("sv_session=")) this.cookie = c.split(";")[0]!;
     const text = await res.text();

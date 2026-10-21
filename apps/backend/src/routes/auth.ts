@@ -19,10 +19,12 @@ export function authRouter({ prisma, env, limits }: AppDeps): Router {
     res.status(429).json({
       error: { code: "RATE_LIMITED", message: "Too many login attempts. Try again later.", requestId: req.requestId },
     });
-  // Brute-force protection per (IP, account) ...
+  // Brute-force protection per (IP, account). Only FAILED attempts are counted, so
+  // legitimate users who sign in and out repeatedly are not locked out.
   const accountLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: limits.loginPer15Min,
+    skipSuccessfulRequests: true,
     standardHeaders: "draft-8",
     legacyHeaders: false,
     keyGenerator: (req) => {
@@ -35,6 +37,7 @@ export function authRouter({ prisma, env, limits }: AppDeps): Router {
   const ipLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: limits.loginPer15Min * 10,
+    skipSuccessfulRequests: true,
     standardHeaders: "draft-8",
     legacyHeaders: false,
     handler: tooManyAttempts,
