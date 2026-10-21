@@ -187,6 +187,19 @@ Using MetaMask instead of the dev account: add a network with RPC `http://127.0.
 | `npm run finance:model`                                             | Recalculate the financial model and regenerate its tables                      |
 | `npm run security:secrets` · `security:audit-deps`                  | Secret scan · dependency audit                                                 |
 
+### Troubleshooting
+
+| Symptom                                                                                      | Cause / fix                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Elections show **"Not on chain"** or the health check says "No contract code"                | The Hardhat node was restarted (its state is in memory). Run `npm run dev:fresh`, or `npm run chain:deploy` + `npm run db:seed`.                                                     |
+| API says **CHAIN_UNAVAILABLE**                                                               | Start the node: `npm run chain:node`.                                                                                                                                                |
+| `Cannot connect to PostgreSQL` at backend start                                              | Start the database (`npm run db:up`) and check `DATABASE_URL`.                                                                                                                       |
+| Backend tests fail with `TEST_DATABASE_URL must be set`                                      | Add `TEST_DATABASE_URL` (a second, disposable database) to `.env`.                                                                                                                   |
+| Login returns **429**                                                                        | Too many failed attempts for that account; wait 15 minutes or restart the backend (in-memory limiter).                                                                               |
+| "Connected wallet … does not match"                                                          | The wallet's account differs from the one linked to the signed-in demo user. Switch accounts in MetaMask or use the dev account.                                                     |
+| Organizer buttons stay disabled                                                              | Connect a wallet first; the step's hint explains any other precondition (e.g. end time already passed).                                                                              |
+| `npm install <new-package>` fails with `Cannot read properties of null (reading 'edgesOut')` | A known npm 10 bug with optional peer dependencies in workspaces. Add packages with `npx npm@11 install …`; plain `npm install`/`npm ci` of the existing lockfile works with npm 10. |
+
 ## 11. Limitations and security assumptions
 
 - **Transparent ballot, not secret.** Every vote is a public event linking a wallet address to an option. Pseudonymous addresses are **not** anonymity. See [`docs/SECURITY.md`](docs/SECURITY.md#2-privacy-what-the-prototype-does-and-does-not-provide).
