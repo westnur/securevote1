@@ -3,7 +3,7 @@
  *  - migrates the dedicated TEST database (TEST_DATABASE_URL, never the dev database)
  *  - starts an isolated Hardhat node on port 8546 and deploys SecureVote to it
  */
-import { execSync, spawn, type ChildProcess } from "node:child_process";
+import { execSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -59,7 +59,8 @@ export default async function setup(project: TestProject) {
   node = spawn("npx", ["hardhat", "node", "--hostname", "127.0.0.1", "--port", String(TEST_RPC_PORT)], {
     cwd: contractsDir,
     stdio: "ignore",
-    detached: true,
+    detached: process.platform !== "win32",
+    shell: process.platform === "win32", // npx is a .cmd script on Windows
   });
   await waitForRpc(rpcUrl);
 
@@ -80,7 +81,9 @@ export default async function setup(project: TestProject) {
   return () => {
     if (node?.pid) {
       try {
-        process.kill(-node.pid, "SIGTERM"); // kill the whole process group (npx + hardhat)
+        // kill the whole process tree (npx + hardhat)
+        if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(node.pid), "/T", "/F"]);
+        else process.kill(-node.pid, "SIGTERM");
       } catch {
         /* already stopped */
       }

@@ -27,7 +27,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fresh = process.argv.includes("--fresh");
 const skipScenario = process.argv.includes("--no-scenario");
 const children = [];
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const isWindows = process.platform === "win32";
+// On Windows, npm is a .cmd script; Node.js only runs those through a shell.
+const npm = "npm";
 
 const log = (msg) => console.log(`\x1b[36m[securevote]\x1b[0m ${msg}`);
 const fail = (msg) => {
@@ -78,13 +80,13 @@ async function waitFor(check, label, timeoutMs = 60_000) {
 
 function run(args, label) {
   log(label);
-  const r = spawnSync(npm, args, { cwd: root, stdio: "inherit" });
+  const r = spawnSync(npm, args, { cwd: root, stdio: "inherit", shell: isWindows });
   if (r.status !== 0) fail(`Step failed: ${label}`);
 }
 
 function startProcess(args, name, logFile) {
   const out = logFile ? fs.openSync(logFile, "a") : "inherit";
-  const child = spawn(npm, args, { cwd: root, stdio: ["ignore", out, out], detached: process.platform !== "win32" });
+  const child = spawn(npm, args, { cwd: root, stdio: ["ignore", out, out], detached: !isWindows, shell: isWindows });
   children.push({ child, name });
   child.on("exit", (code) => {
     if (!shuttingDown) log(`${name} exited with code ${code}`);
@@ -97,7 +99,8 @@ function shutdown(code = 0) {
   shuttingDown = true;
   for (const { child } of children) {
     try {
-      if (process.platform === "win32") child.kill();
+      // Stop the whole process tree (npm → node → hardhat/vite/tsx).
+      if (isWindows) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
       else process.kill(-child.pid, "SIGTERM");
     } catch {
       /* already stopped */
@@ -114,9 +117,19 @@ async function main() {
 
   // 1. PostgreSQL
   const dbUrl = new URL(env.DATABASE_URL ?? "postgresql://localhost:5432/x");
-  if (!(await portOpen(Number(dbUrl.port || 5432), dbUrl.hostname === "localhost" ? "127.0.0.1" : dbUrl.hostname))) {
-    fail(`PostgreSQL is not reachable at ${dbUrl.hostname}:${dbUrl.port || 5432}. Start it with: npm run db:up`);
+  const dbHost = dbUrl.hostname === "localhost" ? "127.0.0.1" : dbUrl.hostname;
+  const dbPort = Number(dbUrl.port || 5432);
+  // Give a just-started Docker container a moment to accept connections.
+  const dbStart = Date.now();
+  while (!(await portOpen(dbPort, dbHost))) {
+    if (Date.now() - dbStart > 30_000) {
+      fail(
+        `PostgreSQL is not reachable at ${dbUrl.hostname}:${dbPort}. Start it with: npm run db:up (Docker Desktop must be running)`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, 1000));
   }
+  await new Promise((r) => setTimeout(r, Date.now() - dbStart > 1000 ? 3000 : 0)); // container init grace period
   log("PostgreSQL is reachable");
 
   // 2. Hardhat node

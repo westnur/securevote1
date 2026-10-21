@@ -22,7 +22,7 @@
     "preview:frontend": "npm run preview -w @securevote/frontend",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "eslint . && npm run lint:sol",
-    "lint:sol": "solhint 'packages/contracts/contracts/**/*.sol'",
+    "lint:sol": "solhint \"packages/contracts/contracts/**/*.sol\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test:contracts && npm run test:backend && npm run test:frontend && npm run test:finance",

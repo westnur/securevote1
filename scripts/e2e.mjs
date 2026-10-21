@@ -19,5 +19,6 @@ if (!ok) {
 const r = spawnSync("npx", ["playwright", "test", ...process.argv.slice(2)], {
   cwd: path.join(root, "apps/frontend"),
   stdio: "inherit",
+  shell: process.platform === "win32", // npx is a .cmd script on Windows
 });
 process.exit(r.status ?? 1);
