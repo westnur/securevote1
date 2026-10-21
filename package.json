@@ -2,7 +2,7 @@
   "name": "securevote",
   "version": "0.1.0",
   "private": true,
-  "description": "SecureVote — educational blockchain-based corporate voting prototype (Introduction to Finance, AITU). Not a real product.",
+  "description": "SecureVote \u2014 educational blockchain-based corporate voting prototype (Introduction to Finance, AITU). Not a real product.",
   "license": "MIT",
   "workspaces": [
     "packages/contracts",
@@ -25,7 +25,7 @@
     "lint:sol": "solhint 'packages/contracts/contracts/**/*.sol'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run test:contracts && npm run test:backend && npm run test:frontend",
+    "test": "npm run test:contracts && npm run test:backend && npm run test:frontend && npm run test:finance",
     "test:contracts": "npm run test -w @securevote/contracts",
     "test:backend": "npm run test -w @securevote/backend",
     "test:frontend": "npm run test -w @securevote/frontend",
@@ -42,7 +42,8 @@
     "demo:scenario": "npm run demo:scenario -w @securevote/backend",
     "finance:model": "node docs/finance/model.mjs",
     "security:audit-deps": "npm audit --omit=dev",
-    "security:secrets": "node scripts/check-secrets.mjs"
+    "security:secrets": "node scripts/check-secrets.mjs",
+    "test:finance": "node --test docs/finance/model.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -10,3 +10,5 @@ packages/contracts/deployments
 apps/backend/prisma/migrations
 apps/frontend/test-results
 .run
+docs/FINANCIAL_MODEL.md
+docs/finance/output

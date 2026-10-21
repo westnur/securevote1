@@ -1,0 +1,140 @@
+{
+  "_notice": "HYPOTHETICAL ASSUMPTIONS for an educational finance project (Introduction to Finance, AITU). Not market data, not a forecast, not an investment offer. Every number is a student assumption unless a source is given.",
+  "currency": "KZT",
+  "units": "All money values in KZT; prices exclude VAT (VAT is treated as a pass-through and ignored).",
+  "years": 3,
+  "pricing": {
+    "subscriptionPerYear": {
+      "value": 3600000,
+      "basis": "Assumption: B2B annual subscription (300,000 KZT/month) for an organization running unlimited voting sessions."
+    },
+    "perElectionFee": { "value": 400000, "basis": "Assumption: pay-per-session price for organizations without a subscription." }
+  },
+  "customers": {
+    "subscribersEndOfYear": {
+      "value": [8, 25, 55],
+      "basis": "Assumption: net subscribers at year end after churn (hypothetical joint-stock companies, boards, HOAs, NGOs)."
+    },
+    "annualChurnRate": {
+      "value": 0.1,
+      "basis": "Assumption: 10% of opening subscribers leave each year; replaced by extra gross additions."
+    },
+    "perElectionSessions": { "value": [25, 60, 110], "basis": "Assumption: pay-per-session voting sessions sold per year." },
+    "revenueTiming": "Subscription revenue uses the AVERAGE of opening and closing subscribers (customers join evenly during the year)."
+  },
+  "acquisition": {
+    "cacPerNewSubscriber": { "value": 800000, "basis": "Assumption: sales + marketing cost to win one new subscriber (CAC)." },
+    "perElectionSalesCommission": {
+      "value": 0.05,
+      "basis": "Assumption: 5% of pay-per-session revenue paid as sales commission."
+    }
+  },
+  "initialInvestment": {
+    "_definition": "Year-0 cash outflows before the first sale. Counted ONCE in the cash-flow statement; not repeated in operating expenses.",
+    "productDevelopment": {
+      "value": 18000000,
+      "basis": "Assumption: hardening this prototype into a production product (≈3 engineers × 6 months). Capitalised and amortised over 3 years in the income statement."
+    },
+    "externalSmartContractAudit": {
+      "value": 12000000,
+      "basis": "Assumption: one professional external smart-contract and application security audit before launch (expensed in Year 0)."
+    },
+    "legalAndRegulatoryReview": {
+      "value": 6000000,
+      "basis": "Assumption: Kazakhstan legal review (corporate voting rules, personal data, contracts) before launch (expensed in Year 0)."
+    },
+    "companySetupAndEquipment": {
+      "value": 2000000,
+      "basis": "Assumption: LLP registration, laptops, initial tooling (expensed in Year 0)."
+    }
+  },
+  "operatingCosts": {
+    "teamFte": { "value": [4, 6, 8], "basis": "Assumption: average full-time employees per year." },
+    "costPerFtePerMonth": {
+      "value": 600000,
+      "basis": "Assumption: fully loaded monthly cost per employee incl. payroll taxes and contributions."
+    },
+    "infrastructureBasePerYear": {
+      "value": 2400000,
+      "basis": "Assumption: cloud hosting, managed blockchain nodes, monitoring, backups (fixed part)."
+    },
+    "infrastructurePerSubscriber": {
+      "value": 120000,
+      "basis": "Assumption: variable hosting cost per average subscriber per year."
+    },
+    "infrastructurePerSession": {
+      "value": 20000,
+      "basis": "Assumption: variable cost per pay-per-session election (support, notifications, transaction costs)."
+    },
+    "legalCompliancePerYear": { "value": 3000000, "basis": "Assumption: ongoing legal, data-protection and compliance advice." },
+    "recurringSecurityAudit": {
+      "value": [0, 5000000, 5000000],
+      "basis": "Assumption: re-audit after major releases in Years 2 and 3 (Year 1 is covered by the Year-0 audit)."
+    },
+    "generalAndAdministrativePerYear": {
+      "value": 4800000,
+      "basis": "Assumption: office, accounting, software licences, insurance."
+    }
+  },
+  "accounting": {
+    "amortisationYears": { "value": 3, "basis": "Assumption: straight-line amortisation of capitalised product development." },
+    "corporateIncomeTaxRate": {
+      "value": 0.2,
+      "basis": "General CIT rate of 20% under the Tax Code of the Republic of Kazakhstan No. 214-VIII of 18 July 2025 (in force from 1 January 2026), as summarised by the State Revenue Committee and professional advisers. Verify with the official text: https://adilet.zan.kz/rus/docs/K2500000214"
+    },
+    "lossCarryForward": {
+      "value": true,
+      "basis": "Simplification: tax losses are carried forward and offset against later profits within the 3-year horizon. Verify current carry-forward rules with a tax adviser."
+    },
+    "workingCapital": "Simplification: no changes in working capital (subscriptions billed and collected within the year)."
+  },
+  "valuation": {
+    "discountRate": {
+      "value": 0.25,
+      "basis": "Assumption: 25% required return reflecting early-stage venture risk (course range 20–30%). Not derived from market data."
+    },
+    "terminalGrowthRate": { "value": 0.05, "basis": "Assumption used ONLY in the supplementary 'with terminal value' metric." }
+  },
+  "funding": {
+    "safetyBufferRate": { "value": 0.2, "basis": "Assumption: 20% buffer on top of the projected cash need." },
+    "roundTo": 5000000
+  },
+  "scenarios": {
+    "base": {
+      "label": "Base case",
+      "customerMultiplier": 1,
+      "priceMultiplier": 1,
+      "salaryMultiplier": 1,
+      "auditMultiplier": 1,
+      "year1RevenueMultiplier": 1,
+      "extraLegalYear1": 0
+    },
+    "slowAdoption": {
+      "label": "Pessimistic 1 — slow adoption (customers −40%)",
+      "customerMultiplier": 0.6,
+      "priceMultiplier": 1,
+      "salaryMultiplier": 1,
+      "auditMultiplier": 1,
+      "year1RevenueMultiplier": 1,
+      "extraLegalYear1": 0
+    },
+    "pricePressure": {
+      "label": "Pessimistic 2 — price pressure −25%, salaries +15%, audits +50%",
+      "customerMultiplier": 1,
+      "priceMultiplier": 0.75,
+      "salaryMultiplier": 1.15,
+      "auditMultiplier": 1.5,
+      "year1RevenueMultiplier": 1,
+      "extraLegalYear1": 0
+    },
+    "regulatoryDelay": {
+      "label": "Pessimistic 3 — 6-month regulatory delay (Year-1 revenue −50%, +5m KZT legal)",
+      "customerMultiplier": 1,
+      "priceMultiplier": 1,
+      "salaryMultiplier": 1,
+      "auditMultiplier": 1,
+      "year1RevenueMultiplier": 0.5,
+      "extraLegalYear1": 5000000
+    }
+  }
+}
