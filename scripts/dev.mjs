@@ -60,6 +60,11 @@ function portOpen(port, host = "127.0.0.1") {
   });
 }
 
+/** "localhost" may be served on IPv4 (127.0.0.1) or IPv6 (::1) depending on the OS — Vite on Windows uses ::1. */
+async function localPortOpen(port) {
+  return (await portOpen(port, "127.0.0.1")) || (await portOpen(port, "::1"));
+}
+
 async function rpc(url, method, params = []) {
   const res = await fetch(url, {
     method: "POST",
@@ -189,7 +194,7 @@ async function main() {
     return (await r.json()).status === "ok";
   }, "backend /api/health");
   startProcess(["run", "dev:frontend"], "frontend");
-  await waitFor(() => portOpen(5173), "frontend on :5173");
+  await waitFor(() => localPortOpen(5173), "frontend on :5173");
 
   // 6. Demo data
   if (redeploy && !skipScenario) {
